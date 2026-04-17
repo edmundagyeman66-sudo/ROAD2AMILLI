@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { getLeagueTable } from '@/lib/data';
 
 interface Prediction {
   name: string;
@@ -25,6 +26,16 @@ interface PlayerLineup {
   number: number;
 }
 
+interface LeagueTableRow {
+  position: number;
+  team: string;
+  played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  points: number;
+}
+
 interface MatchData {
   matchId: string;
   date: string;
@@ -32,6 +43,7 @@ interface MatchData {
   awayTeam: string;
   tournament: string;
   league?: string;
+  country?: string;
   isPremium?: boolean;
   premiumMarket?: string;
   premiumProbability?: number;
@@ -42,12 +54,23 @@ interface MatchData {
   awayLineup?: PlayerLineup[];
 }
 
+// Helper to get team initials for logo display
+function getTeamInitials(team: string): string {
+  return team
+    .split(' ')
+    .map(word => word[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+}
+
 export default function MatchDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const [matchData, setMatchData] = useState<MatchData | null>(null);
+  const [leagueTable, setLeagueTable] = useState<LeagueTableRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'predictions' | 'h2h' | 'lineups'>('predictions');
+  const [activeTab, setActiveTab] = useState<'predictions' | 'h2h' | 'lineups' | 'table'>('predictions');
 
   const matchId = params?.id as string;
   const sport = params?.sport as 'football' | 'basketball';
@@ -60,6 +83,13 @@ export default function MatchDetailsPage() {
       .then((res) => res.json())
       .then((data) => {
         setMatchData(data);
+        
+        // Generate league table if country and league are available
+        if (data.country && data.league) {
+          const table = getLeagueTable(data.league, data.country);
+          setLeagueTable(table);
+        }
+        
         setLoading(false);
       })
       .catch(() => {
@@ -92,6 +122,8 @@ export default function MatchDetailsPage() {
 
   const isBasketball = sport === 'basketball';
   const topPrediction = matchData.predictions.find(p => p.isTopPick) || matchData.predictions[0];
+  const homeInitials = getTeamInitials(matchData.homeTeam);
+  const awayInitials = getTeamInitials(matchData.awayTeam);
 
   return (
     <main className="main">
@@ -111,15 +143,28 @@ export default function MatchDetailsPage() {
         </div>
       </section>
 
+      {/* Country and League Info */}
+      {(matchData.country || matchData.league) && (
+        <section className="card league-info-card">
+          <div className="league-info">
+            {matchData.country && <span className="country">{matchData.country}</span>}
+            {matchData.country && matchData.league && <span className="separator">•</span>}
+            {matchData.league && <span className="league">{matchData.league}</span>}
+          </div>
+        </section>
+      )}
+
       <section className="card match-header-card">
         <div className="match-teams-header">
           <div className="team-section">
+            <div className="team-logo">{homeInitials}</div>
             <h2>{matchData.homeTeam}</h2>
           </div>
           <div className="vs-section">
             <span className="vs-text">vs</span>
           </div>
           <div className="team-section">
+            <div className="team-logo">{awayInitials}</div>
             <h2>{matchData.awayTeam}</h2>
           </div>
         </div>
@@ -150,6 +195,14 @@ export default function MatchDetailsPage() {
           >
             👥 Lineups
           </button>
+          {leagueTable.length > 0 && (
+            <button
+              className={`tab-button ${activeTab === 'table' ? 'active' : ''}`}
+              onClick={() => setActiveTab('table')}
+            >
+              🏆 League Table
+            </button>
+          )}
         </div>
 
         {activeTab === 'predictions' && (
@@ -240,6 +293,39 @@ export default function MatchDetailsPage() {
                 </div>
               ) : (
                 <p style={{ textAlign: 'center', color: '#999999' }}>Lineups not available yet</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'table' && (
+          <div className="tab-content">
+            <div className="league-table-container">
+              {leagueTable && leagueTable.length > 0 ? (
+                <div className="league-table">
+                  <div className="table-header-row">
+                    <div className="header-pos">#</div>
+                    <div className="header-team">Team</div>
+                    <div className="header-stat">P</div>
+                    <div className="header-stat">W</div>
+                    <div className="header-stat">D</div>
+                    <div className="header-stat">L</div>
+                    <div className="header-stat">Pts</div>
+                  </div>
+                  {leagueTable.map((row, index) => (
+                    <div key={index} className="league-table-row">
+                      <div className="row-pos">{row.position}</div>
+                      <div className="row-team">{row.team}</div>
+                      <div className="row-stat">{row.played}</div>
+                      <div className="row-stat">{row.wins}</div>
+                      <div className="row-stat">{row.draws}</div>
+                      <div className="row-stat">{row.losses}</div>
+                      <div className="row-stat row-stat-points">{row.points}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ textAlign: 'center', color: '#999999' }}>League table not available</p>
               )}
             </div>
           </div>

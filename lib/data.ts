@@ -37,6 +37,8 @@ export interface LiveMatch {
   fouls: number;
   throwIns: number;
   lastEvent: string;
+  country?: string;
+  league?: string;
 }
 
 export interface UpcomingMatch {
@@ -45,6 +47,8 @@ export interface UpcomingMatch {
   homeTeam: string;
   awayTeam: string;
   tournament: string;
+  league?: string;
+  country: string;
   isPremium?: boolean;
   premiumMarket?: string;
   premiumProbability?: number;
@@ -93,6 +97,8 @@ export interface BasketballLiveMatch {
   homeFouls: number;
   awayFouls: number;
   lastEvent: string;
+  country?: string;
+  league?: string;
 }
 
 export interface BasketballUpcomingMatch {
@@ -101,6 +107,7 @@ export interface BasketballUpcomingMatch {
   homeTeam: string;
   awayTeam: string;
   league: string;
+  country: string;
   isPremium?: boolean;
   premiumMarket?: string;
   premiumProbability?: number;
@@ -207,6 +214,8 @@ export const liveMatches: LiveMatch[] = [
     fouls: 14,
     throwIns: 17,
     lastEvent: 'Yellow card for Green City center back',
+    country: 'England',
+    league: 'Premier League',
   },
   {
     matchId: 'live-002',
@@ -221,6 +230,8 @@ export const liveMatches: LiveMatch[] = [
     fouls: 11,
     throwIns: 9,
     lastEvent: 'Red Rapids lead after a set-piece goal',
+    country: 'Spain',
+    league: 'La Liga',
   },
 ];
 
@@ -411,6 +422,7 @@ export const upcomingMatches: UpcomingMatch[] = [
           homeTeam: teamList[homeIdx],
           awayTeam: teamList[awayIdx],
           tournament: league,
+          country,
           isPremium,
           premiumMarket,
           premiumProbability
@@ -454,6 +466,8 @@ export const upcomingMatches: UpcomingMatch[] = [
         homeTeam: teamList[homeIdx],
         awayTeam: teamList[awayIdx],
         tournament: league,
+        league,
+        country: randomCountry,
         isPremium,
         premiumMarket,
         premiumProbability
@@ -683,6 +697,7 @@ export const basketballUpcomingMatches: BasketballUpcomingMatch[] = [
           homeTeam: basketballTeamList[homeIdx],
           awayTeam: basketballTeamList[awayIdx],
           league,
+          country,
           isPremium,
           premiumMarket,
           premiumProbability
@@ -726,6 +741,7 @@ export const basketballUpcomingMatches: BasketballUpcomingMatch[] = [
         homeTeam: basketballTeamList[homeIdx],
         awayTeam: basketballTeamList[awayIdx],
         league,
+        country: randomCountry,
         isPremium,
         premiumMarket,
         premiumProbability
@@ -760,4 +776,48 @@ export function getBasketballLiveMatches() {
 
 export function getBasketballUpcomingMatches() {
   return basketballUpcomingMatches;
+}
+
+export interface LeagueTableRow {
+  position: number;
+  team: string;
+  played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  points: number;
+}
+
+export function getLeagueTable(league: string, country = 'Global'): LeagueTableRow[] {
+  const teams = [
+    'Champions United',
+    'City Falcons',
+    'United Rangers',
+    'Royal Strikers',
+    'Victory Reds',
+    'Golden Warriors',
+    'Elite Stars',
+    'Thunder FC',
+    'Polar Knights',
+    'Ocean Eagles',
+  ];
+
+  return teams.map((team, index) => {
+    const position = index + 1;
+    const played = 18;
+    const wins = 10 + Math.max(0, 5 - index);
+    const draws = 4 + Math.min(index, 3);
+    const losses = played - wins - draws;
+    const points = wins * 3 + draws;
+
+    return {
+      position,
+      team,
+      played,
+      wins,
+      draws,
+      losses,
+      points,
+    };
+  });
 }

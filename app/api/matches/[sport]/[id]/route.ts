@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import {
+  getLiveMatches,
   getUpcomingMatches,
+  getBasketballLiveMatches,
   getBasketballUpcomingMatches,
 } from '../../../../../lib/data';
 import {
@@ -15,14 +17,14 @@ export async function GET(
   const { sport, id } = params;
 
   try {
-    let matches;
-    let matchData;
+    let matches: any[] = [];
+    let matchData: any;
 
     if (sport === 'football') {
-      matches = getUpcomingMatches();
+      matches = [...getUpcomingMatches(), ...getLiveMatches()];
       matchData = matches.find(m => m.matchId === id);
     } else if (sport === 'basketball') {
-      matches = getBasketballUpcomingMatches();
+      matches = [...getBasketballUpcomingMatches(), ...getBasketballLiveMatches()];
       matchData = matches.find(m => m.matchId === id);
     } else {
       return NextResponse.json({ error: 'Invalid sport' }, { status: 400 });
@@ -35,13 +37,18 @@ export async function GET(
     // Get predictions for this match
     let predictions;
     if (matchData.isPremium && matchData.premiumMarket) {
-      predictions = [getPremiumPredictionForMatch(matchData.homeTeam, matchData.awayTeam, matchData.premiumMarket, sport)];
+      predictions = [getPremiumPredictionForMatch(matchData.homeTeam, matchData.awayTeam, matchData.premiumMarket, sport as 'football' | 'basketball')];
     } else {
-      predictions = getPredictionForMatch(matchData.homeTeam, matchData.awayTeam, sport);
+      predictions = getPredictionForMatch(matchData.homeTeam, matchData.awayTeam, sport as 'football' | 'basketball');
     }
+
+    const league = matchData.league || matchData.tournament || 'Unknown League';
+    const country = matchData.country || 'Global';
 
     return NextResponse.json({
       ...matchData,
+      league,
+      country,
       predictions,
       sport
     });
