@@ -58,7 +58,27 @@ The platform is designed to aggregate data from multiple football analytics sour
 
 ## Deployment
 
-The app is ready for deployment on Vercel, Netlify, or any Node.js hosting platform.
+### Vercel
+
+1. Go to https://vercel.com and sign in with GitHub.
+2. Import the repository `edmundagyeman66-sudo/ROAD2AMILLI`.
+3. Use the following settings:
+   - Framework preset: `Next.js`
+   - Build command: `npm run build`
+   - Output directory: leave blank
+4. Add the required environment variables in Vercel:
+   - `NEXTAUTH_URL=https://<your-deployment>.vercel.app`
+   - `NEXTAUTH_SECRET=your-secret-here`
+   - `GOOGLE_CLIENT_ID`
+   - `GOOGLE_CLIENT_SECRET`
+   - `APPLE_ID`
+   - `APPLE_TEAM_ID`
+   - `APPLE_KEY_ID`
+   - `APPLE_PRIVATE_KEY`
+
+### GitHub Actions
+
+A GitHub Actions workflow is included at `.github/workflows/deploy.yml` to validate the build on every push to `main`.
 
 ## License
 
