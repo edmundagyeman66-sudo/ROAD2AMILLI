@@ -1,3 +1,5 @@
+import { getPredictionForMatch } from './predict';
+
 export interface PlayerEventStats {
   player: string;
   bookings: number;
@@ -111,6 +113,32 @@ export interface BasketballUpcomingMatch {
   isPremium?: boolean;
   premiumMarket?: string;
   premiumProbability?: number;
+}
+
+export interface HistoricalPrediction {
+  name: string;
+  value: string;
+  explanation: string;
+  isTopPick?: boolean;
+  winChance?: number;
+  actualOutcome?: string;
+  wasCorrect?: boolean;
+}
+
+export interface HistoricalMatch {
+  matchId: string;
+  date: string;
+  homeTeam: string;
+  awayTeam: string;
+  tournament: string;
+  league?: string;
+  country?: string;
+  homeScore: number;
+  awayScore: number;
+  status: 'completed';
+  predictions: HistoricalPrediction[];
+  sport: 'football' | 'basketball';
+  predictionAccuracy?: number; // percentage of correct predictions
 }
 
 export const teamList = [
@@ -820,4 +848,206 @@ export function getLeagueTable(league: string, country = 'Global'): LeagueTableR
       points,
     };
   });
+}
+
+let historicalMatches: HistoricalMatch[] = [];
+
+export function generateHistoricalMatches(): HistoricalMatch[] {
+  if (historicalMatches.length > 0) {
+    return historicalMatches;
+  }
+
+  const countries = ['England', 'Spain', 'Germany', 'Italy', 'France', 'Netherlands'];
+  const leagues = {
+    'England': ['Premier League', 'Championship', 'League One'],
+    'Spain': ['La Liga', 'Segunda División'],
+    'Germany': ['Bundesliga', '2. Bundesliga'],
+    'Italy': ['Serie A', 'Serie B'],
+    'France': ['Ligue 1', 'Ligue 2'],
+    'Netherlands': ['Eredivisie']
+  };
+
+  const footballTeams = [
+    'Manchester United', 'Liverpool', 'Chelsea', 'Arsenal', 'Manchester City',
+    'Tottenham', 'Barcelona', 'Real Madrid', 'Atletico Madrid', 'Bayern Munich',
+    'Borussia Dortmund', 'Juventus', 'AC Milan', 'Inter Milan', 'PSG',
+    'Marseille', 'Ajax', 'PSV Eindhoven', 'Feyenoord'
+  ];
+
+  const basketballTeams = [
+    'Lakers', 'Celtics', 'Warriors', 'Bulls', 'Heat', 'Spurs', 'Nets', 'Knicks',
+    '76ers', 'Bucks', 'Suns', 'Clippers', 'Jazz', 'Thunder', 'Raptors'
+  ];
+
+  // Generate last 30 days of matches
+  for (let i = 1; i <= 30; i++) {
+    const matchDate = new Date();
+    matchDate.setDate(matchDate.getDate() - i);
+    const dateStr = matchDate.toISOString().split('T')[0];
+
+    // Generate 3-5 matches per day
+    const matchesPerDay = 3 + Math.floor(Math.random() * 3);
+
+    for (let j = 0; j < matchesPerDay; j++) {
+      const isFootball = Math.random() > 0.3; // 70% football, 30% basketball
+      const sport = isFootball ? 'football' : 'basketball';
+      const teams = isFootball ? footballTeams : basketballTeams;
+
+      const homeTeam = teams[Math.floor(Math.random() * teams.length)];
+      let awayTeam = teams[Math.floor(Math.random() * teams.length)];
+      while (awayTeam === homeTeam) {
+        awayTeam = teams[Math.floor(Math.random() * teams.length)];
+      }
+
+      const country = countries[Math.floor(Math.random() * countries.length)];
+      const league = leagues[country as keyof typeof leagues][Math.floor(Math.random() * leagues[country as keyof typeof leagues].length)];
+
+      // Generate realistic scores
+      let homeScore: number, awayScore: number;
+      if (isFootball) {
+        homeScore = Math.floor(Math.random() * 5);
+        awayScore = Math.floor(Math.random() * 5);
+      } else {
+        homeScore = 70 + Math.floor(Math.random() * 50);
+        awayScore = 70 + Math.floor(Math.random() * 50);
+      }
+
+      // Generate predictions for this match
+      const predictions = getPredictionForMatch(homeTeam, awayTeam, sport);
+
+      // Simulate actual outcomes and check prediction accuracy
+      const historicalPredictions: HistoricalPrediction[] = predictions.map(pred => {
+        let actualOutcome = '';
+        let wasCorrect = false;
+
+        if (pred.name === 'Match Winner') {
+          const predictedWinner = pred.value;
+          const actualWinner = homeScore > awayScore ? homeTeam : awayScore > homeScore ? awayTeam : 'Draw';
+          actualOutcome = actualWinner;
+          wasCorrect = predictedWinner === actualWinner;
+        } else if (pred.name === 'Both Teams To Score') {
+          actualOutcome = (homeScore > 0 && awayScore > 0) ? 'Yes' : 'No';
+          wasCorrect = pred.value === actualOutcome;
+        } else if (pred.name === 'Over/Under 2.5 Goals') {
+          const totalGoals = homeScore + awayScore;
+          actualOutcome = totalGoals > 2.5 ? 'Over 2.5' : 'Under 2.5';
+          wasCorrect = pred.value === actualOutcome;
+        } else if (pred.name === 'Total Points Over/Under') {
+          const totalPoints = homeScore + awayScore;
+          actualOutcome = totalPoints > 180 ? 'Over 180.5' : 'Under 180.5';
+          wasCorrect = pred.value === actualOutcome;
+        } else {
+          // For other predictions, simulate 60% accuracy
+          wasCorrect = Math.random() > 0.4;
+          actualOutcome = wasCorrect ? pred.value : 'Different outcome';
+        }
+
+        return {
+          ...pred,
+          actualOutcome,
+          wasCorrect
+        };
+      });
+
+      const correctPredictions = historicalPredictions.filter(p => p.wasCorrect).length;
+      const predictionAccuracy = Math.round((correctPredictions / historicalPredictions.length) * 100);
+
+      const match: HistoricalMatch = {
+        matchId: `${sport}-${dateStr}-${j}`,
+        date: dateStr,
+        homeTeam,
+        awayTeam,
+        tournament: league,
+        league,
+        country,
+        homeScore,
+        awayScore,
+        status: 'completed',
+        predictions: historicalPredictions,
+        sport,
+        predictionAccuracy
+      };
+
+      historicalMatches.push(match);
+    }
+  }
+
+  // Sort by date (newest first)
+  historicalMatches.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  return historicalMatches;
+}
+
+export function getHistoricalMatches(limit = 50): HistoricalMatch[] {
+  return generateHistoricalMatches().slice(0, limit);
+}
+
+export function getHistoricalMatchesBySport(sport: 'football' | 'basketball', limit = 50): HistoricalMatch[] {
+  return generateHistoricalMatches()
+    .filter(match => match.sport === sport)
+    .slice(0, limit);
+}
+
+export function getHistoricalMatchesByDateRange(startDate: string, endDate: string): HistoricalMatch[] {
+  return generateHistoricalMatches()
+    .filter(match => match.date >= startDate && match.date <= endDate);
+}
+
+export function getPredictionAccuracyStats(): {
+  totalMatches: number;
+  averageAccuracy: number;
+  accuracyBySport: { [key: string]: number };
+  accuracyByLeague: { [key: string]: number };
+} {
+  const matches = generateHistoricalMatches();
+
+  if (matches.length === 0) {
+    return {
+      totalMatches: 0,
+      averageAccuracy: 0,
+      accuracyBySport: {},
+      accuracyByLeague: {}
+    };
+  }
+
+  const totalAccuracy = matches.reduce((sum, match) => sum + (match.predictionAccuracy || 0), 0);
+  const averageAccuracy = Math.round(totalAccuracy / matches.length);
+
+  const accuracyBySport: { [key: string]: { total: number; count: number } } = {};
+  const accuracyByLeague: { [key: string]: { total: number; count: number } } = {};
+
+  matches.forEach(match => {
+    // By sport
+    if (!accuracyBySport[match.sport]) {
+      accuracyBySport[match.sport] = { total: 0, count: 0 };
+    }
+    accuracyBySport[match.sport].total += match.predictionAccuracy || 0;
+    accuracyBySport[match.sport].count += 1;
+
+    // By league
+    const league = match.league || 'Unknown';
+    if (!accuracyByLeague[league]) {
+      accuracyByLeague[league] = { total: 0, count: 0 };
+    }
+    accuracyByLeague[league].total += match.predictionAccuracy || 0;
+    accuracyByLeague[league].count += 1;
+  });
+
+  // Convert to averages
+  const finalAccuracyBySport: { [key: string]: number } = {};
+  Object.keys(accuracyBySport).forEach(sport => {
+    finalAccuracyBySport[sport] = Math.round(accuracyBySport[sport].total / accuracyBySport[sport].count);
+  });
+
+  const finalAccuracyByLeague: { [key: string]: number } = {};
+  Object.keys(accuracyByLeague).forEach(league => {
+    finalAccuracyByLeague[league] = Math.round(accuracyByLeague[league].total / accuracyByLeague[league].count);
+  });
+
+  return {
+    totalMatches: matches.length,
+    averageAccuracy,
+    accuracyBySport: finalAccuracyBySport,
+    accuracyByLeague: finalAccuracyByLeague
+  };
 }

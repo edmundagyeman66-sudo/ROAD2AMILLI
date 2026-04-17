@@ -703,15 +703,24 @@ export default function HomePage() {
                 <h1 className="logo">ROAD2AMILLI</h1>
                 <p className="subtitle">insight, not guesses. own the game.</p>
               </div>
-              <div className="auth-section">
-                {session ? (
-                  <>
-                    <p>Welcome, <strong>{session.user?.name ?? session.user?.email}</strong></p>
-                    <button type="button" onClick={() => signOut()}>Sign out</button>
-                  </>
-                ) : (
-                  <button type="button" onClick={() => router.push('/login')}>Sign in</button>
-                )}
+              <div className="header-actions">
+                <button
+                  type="button"
+                  onClick={() => router.push('/historical')}
+                  className="nav-button"
+                >
+                  📊 Historical Matches
+                </button>
+                <div className="auth-section">
+                  {session ? (
+                    <>
+                      <p>Welcome, <strong>{session.user?.name ?? session.user?.email}</strong></p>
+                      <button type="button" onClick={() => signOut()}>Sign out</button>
+                    </>
+                  ) : (
+                    <button type="button" onClick={() => router.push('/login')}>Sign in</button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
