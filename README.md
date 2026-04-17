@@ -69,12 +69,22 @@ The platform is designed to aggregate data from multiple football analytics sour
 4. Add the required environment variables in Vercel:
    - `NEXTAUTH_URL=https://<your-deployment>.vercel.app`
    - `NEXTAUTH_SECRET=your-secret-here`
-   - `GOOGLE_CLIENT_ID`
-   - `GOOGLE_CLIENT_SECRET`
-   - `APPLE_ID`
-   - `APPLE_TEAM_ID`
-   - `APPLE_KEY_ID`
-   - `APPLE_PRIVATE_KEY`
+   - `GOOGLE_CLIENT_ID=your-google-client-id`
+   - `GOOGLE_CLIENT_SECRET=your-google-client-secret`
+   - `APPLE_ID=your-apple-id`
+   - `APPLE_TEAM_ID=your-apple-team-id`
+   - `APPLE_KEY_ID=your-apple-key-id`
+   - `APPLE_PRIVATE_KEY=your-apple-private-key`
+
+### dotenv example
+
+Copy `.env.example` to `.env.local` for local development:
+
+```bash
+cp .env.example .env.local
+```
+
+Then update the values to match your provider credentials.
 
 ### GitHub Actions
 
