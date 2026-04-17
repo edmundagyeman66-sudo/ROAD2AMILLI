@@ -1,5 +1,9 @@
 {
     "chat.tools.terminal.autoApprove": {
-        "npx next": true
+        "npx next": true,
+        "/^cd /workspaces/ROAD2AMILLI && timeout 10s npm run dev 2>&1 \\| head -20$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
     }
 }
